@@ -4,6 +4,7 @@ import 'package:frontend/pages/planning.dart';
 import 'package:frontend/pages/rendez_vous.dart';
 import 'package:frontend/pages/visites.dart';
 import 'package:frontend/pages/parametres.dart';
+import 'package:frontend/services/service_application.dart';
 
 class HomeWithBottomNav extends StatefulWidget {
   const HomeWithBottomNav({super.key});
@@ -14,22 +15,52 @@ class HomeWithBottomNav extends StatefulWidget {
 
 class _HomeWithBottomNavState extends State<HomeWithBottomNav> {
   int _selectedIndex = 0;
+  Map<String, dynamic>? _dashboardData;
+  bool _isLoading = true;
 
-  final List<Widget> _pages = [
-    const Dashboard(),
-    const Planning(),
-    const RendezVous(),
-    const Visites(),
-    const Parametres(),
-  ];
+  late List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    try {
+      final data = await ApiService.getDashboardApi();
+      setState(() {
+        _dashboardData = data;
+        _isLoading = false;
+        _pages = [
+          Dashboard(dashboardData: _dashboardData!),
+          const Planning(),
+          const RendezVous(),
+          const Visites(),
+          const Parametres(),
+        ];
+      });
+    } catch (e) {
+      print('Erreur lors du chargement du dashboard: $e');
+      setState(() {
+        _isLoading = false;
+        _pages = [
+          Dashboard(dashboardData: {}),
+          const Planning(),
+          const RendezVous(),
+          const Visites(),
+          const Parametres(),
+        ];
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       body: _pages[_selectedIndex],
       bottomNavigationBar: Container(
@@ -110,7 +141,7 @@ class _HomeWithBottomNavState extends State<HomeWithBottomNav> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFFC9A227).withValues(alpha: 0.1)
+              ? const Color(0xFF152895).withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(15),
         ),
@@ -123,7 +154,7 @@ class _HomeWithBottomNavState extends State<HomeWithBottomNav> {
                 isSelected ? selectedIcon : icon,
                 key: ValueKey(isSelected ? selectedIcon : icon),
                 color: isSelected
-                    ? const Color(0xFFC9A227)
+                    ? const Color(0xFF152895)
                     : Colors.grey.shade600,
                 size: 20,
               ),
@@ -133,7 +164,7 @@ class _HomeWithBottomNavState extends State<HomeWithBottomNav> {
               duration: const Duration(milliseconds: 300),
               style: TextStyle(
                 color: isSelected
-                    ? const Color(0xFFC9A227)
+                    ? const Color(0xFF152895)
                     : Colors.grey.shade600,
                 fontSize: isSelected ? 12 : 10,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,

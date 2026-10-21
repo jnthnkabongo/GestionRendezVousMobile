@@ -1,21 +1,24 @@
 import 'dart:convert';
-//import 'dart:io';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static String baseUrl = 'https://kinstore.alwaysdata.net/api';
+  // static String baseUrl =
+  //'https://kinstore.alwaysdata.net/api';
 
-  // static String get baseUrl {
-  //   if (kIsWeb) {
-  //     return 'http://localhost:8000/api';
-  //   } else if (Platform.isAndroid) {
-  //     return 'http://10.0.2.2:8000/api';
-  //   } else if (Platform.isIOS) {
-  //     return 'http://localhost:8000/api';
-  //   }
-  //   return 'http://localhost:8000/api';
-  // }
+  static String get baseUrl {
+    if (kIsWeb) {
+      // return 'http://localhost:8000/api';
+      return 'http://192.168.13.126:8000/api';
+    } else if (Platform.isAndroid) {
+      return 'http://192.168.13.126:8000/api';
+    } else if (Platform.isIOS) {
+      return 'http://192.168.13.126:8000/api';
+    }
+    return 'http://192.168.13.126:8000/api';
+  }
 
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'user';
@@ -83,5 +86,81 @@ class ApiService {
       headers['Authorization'] = 'Bearer $token';
     }
     return headers;
+  }
+
+  static Future<dynamic> getDashboardApi() async {
+    final headers = await getAuthHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/dashboard-api'),
+      headers: headers,
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      throw Exception('Erreur lors de la récupération du dashboard');
+    }
+  }
+
+  static Future<dynamic> getListeRendezVous() async {
+    final headers = await getAuthHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/rendez-vous'),
+      headers: headers,
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      throw Exception('Erreur lors de la récupération des rendez-vous');
+    }
+  }
+
+  static Future<dynamic> getListeRendezVousPlanifies() async {
+    final headers = await getAuthHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/rendez-vous/planifier'),
+      headers: headers,
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      throw Exception(
+        'Erreur lors de la récupération des rendez-vous planifiés',
+      );
+    }
+  }
+
+  static Future<dynamic> getListeRendezVousTermines() async {
+    final headers = await getAuthHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/rendez-vous/terminer'),
+      headers: headers,
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      throw Exception(
+        'Erreur lors de la récupération des rendez-vous terminés',
+      );
+    }
+  }
+
+  static Future<dynamic> getListeRendezVousTerminer() async {
+    final headers = await getAuthHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/rendez-vous/terminer'),
+      headers: headers,
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      throw Exception(
+        'Erreur lors de la récupération des rendez-vous terminés',
+      );
+    }
   }
 }

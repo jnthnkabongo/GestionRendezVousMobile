@@ -108,7 +108,7 @@ class _LoginState extends State<Login> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     child: Image.asset(
-                      'assets/images/app-icon-512x512.png',
+                      'assets/images/logo_web_512x192.png',
                       width: 250,
                       height: 250,
                     ),
