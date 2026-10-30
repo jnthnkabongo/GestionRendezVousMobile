@@ -80,129 +80,118 @@ class _PlanningState extends State<Planning> {
     }
   }
 
-  Color _getStatusColor(String? statut) {
-    switch (statut) {
-      case 'planifie':
-        return Color(0xFF152895);
-      case 'confirme':
-        return Color(0xFF4CAF50);
-      case 'termine':
-        return Color(0xFF9C27B0);
-      case 'annule':
-        return Color(0xFFF44336);
-      default:
-        return Color(0xFF152895);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF152895),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Column(
           children: [
-            Text(
-              'Planning',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+            // Header
+            Container(
+              padding: EdgeInsets.all(16),
+              margin: EdgeInsets.only(top: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Planning',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.person, color: Colors.white, size: 28),
+                  ),
+                ],
               ),
             ),
-
+            // Barre de recherche
             Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
+              padding: EdgeInsets.all(16),
+              child: TextField(
+                controller: searchController,
+                decoration: InputDecoration(
+                  hintText: 'Rechercher un planning...',
+                  prefixIcon: Icon(Icons.search, color: Color(0xFF152895)),
+                  filled: true,
+                  fillColor: Colors.white.withValues(alpha: 0.5),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
               ),
-              child: Icon(Icons.person, color: Colors.white, size: 28),
+            ),
+            // Liste de planning
+            Expanded(
+              child: isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : filteredRendezVousList.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.event_busy,
+                            size: 64,
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            searchController.text.isEmpty
+                                ? 'Aucun rendez-vous planifié'
+                                : 'Aucun résultat',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: fetchRendezVous,
+                      child: ListView.builder(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        itemCount: filteredRendezVousList.length,
+                        itemBuilder: (context, index) {
+                          final rdv = filteredRendezVousList[index];
+                          return _buildPlanningCard(rdv);
+                        },
+                      ),
+                    ),
             ),
           ],
         ),
       ),
-      body: Column(
-        children: [
-          // Barre de recherche
-          Container(
-            padding: EdgeInsets.all(16),
-            child: TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                hintText: 'Rechercher un planning...',
-                prefixIcon: Icon(Icons.search, color: Color(0xFF152895)),
-                filled: true,
-                fillColor: Colors.grey[100],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-            ),
-          ),
-          // Liste de planning
-          Expanded(
-            child: isLoading
-                ? Center(child: CircularProgressIndicator())
-                : filteredRendezVousList.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.event_busy,
-                          size: 64,
-                          color: Colors.grey[300],
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          searchController.text.isEmpty
-                              ? 'Aucun rendez-vous planifié'
-                              : 'Aucun résultat',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: fetchRendezVous,
-                    child: ListView.builder(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      itemCount: filteredRendezVousList.length,
-                      itemBuilder: (context, index) {
-                        final rdv = filteredRendezVousList[index];
-                        return _buildPlanningCard(rdv);
-                      },
-                    ),
-                  ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Ajouter la logique pour créer un nouveau planning
-        },
-        backgroundColor: Color(0xFF152895),
-        child: Icon(Icons.add, color: Colors.white),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () {
+      //     // TODO: Ajouter la logique pour créer un nouveau planning
+      //   },
+      //   backgroundColor: Color(0xFF152895),
+      //   child: Icon(Icons.add, color: Colors.white),
+      // ),
     );
   }
 
   Widget _buildPlanningCard(Map<String, dynamic> rdv) {
-    final color = _getStatusColor(rdv['statut']);
     final client = rdv['client'] ?? {};
     final clientName = '${client['nom'] ?? ''} ${client['prenom'] ?? ''}'
         .trim();
@@ -213,14 +202,17 @@ class _PlanningState extends State<Planning> {
       margin: EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2), width: 1),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 5,
-            offset: Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -229,10 +221,10 @@ class _PlanningState extends State<Planning> {
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: Color(0xFF152895).withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.event, color: color, size: 22),
+            child: Icon(Icons.event, color: Color(0xFF152895), size: 22),
           ),
           SizedBox(width: 16),
           Expanded(
@@ -244,14 +236,17 @@ class _PlanningState extends State<Planning> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Color(0xFF152895),
                   ),
                 ),
                 SizedBox(height: 4),
                 if (clientName.isNotEmpty)
                   Text(
                     clientName,
-                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF152895).withValues(alpha: 0.7),
+                    ),
                   ),
                 SizedBox(height: 4),
                 Row(
@@ -259,13 +254,16 @@ class _PlanningState extends State<Planning> {
                   children: [
                     Text(
                       date,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF152895).withValues(alpha: 0.6),
+                      ),
                     ),
                     Text(
                       time,
                       style: TextStyle(
                         fontSize: 12,
-                        color: color,
+                        color: Color(0xFF152895),
                         fontWeight: FontWeight.w600,
                       ),
                     ),

@@ -87,129 +87,119 @@ class _RendezVousState extends State<RendezVous> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF152895),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Column(
           children: [
-            Text(
-              'Rendez-vous',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+            // Header
+            Container(
+              padding: EdgeInsets.all(16),
+              margin: EdgeInsets.only(top: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Rendez-vous',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.person, color: Colors.white, size: 28),
+                  ),
+                ],
+              ),
+            ),
+            // Barre de recherche
+            Container(
+              padding: EdgeInsets.all(16),
+              child: TextField(
+                controller: searchController,
+                decoration: InputDecoration(
+                  hintText: 'Rechercher un rendez-vous...',
+                  prefixIcon: Icon(Icons.search, color: Color(0xFF152895)),
+                  filled: true,
+                  fillColor: Colors.white.withValues(alpha: 0.5),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
               ),
             ),
 
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.person, color: Colors.white, size: 28),
+            // Liste de rendez-vous
+            Expanded(
+              child: isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : filteredRendezVousList.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.event_busy,
+                            size: 64,
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            searchController.text.isEmpty
+                                ? 'Aucun rendez-vous'
+                                : 'Aucun résultat',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: fetchRendezVous,
+                      child: ListView.builder(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        itemCount: filteredRendezVousList.length,
+                        itemBuilder: (context, index) {
+                          final rdv = filteredRendezVousList[index];
+                          return _buildRendezVousCard(rdv);
+                        },
+                      ),
+                    ),
             ),
           ],
         ),
       ),
-      body: Column(
-        children: [
-          SizedBox(height: 4),
-
-          // Barre de recherche
-          Container(
-            padding: EdgeInsets.all(16),
-            child: TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                hintText: 'Rechercher un rendez-vous...',
-                prefixIcon: Icon(Icons.search, color: Color(0xFF152895)),
-                filled: true,
-                fillColor: Colors.grey[100],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-            ),
-          ),
-
-          // Liste de rendez-vous
-          Expanded(
-            child: isLoading
-                ? Center(child: CircularProgressIndicator())
-                : filteredRendezVousList.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.event_busy,
-                          size: 44,
-                          color: Colors.grey[300],
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          searchController.text.isEmpty
-                              ? 'Aucun rendez-vous'
-                              : 'Aucun résultat',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: fetchRendezVous,
-                    child: ListView.builder(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      itemCount: filteredRendezVousList.length,
-                      itemBuilder: (context, index) {
-                        final rdv = filteredRendezVousList[index];
-                        return _buildRendezVousCard(rdv);
-                      },
-                    ),
-                  ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Ajouter la logique pour créer un nouveau rendez-vous
-        },
-        backgroundColor: Color(0xFF152895),
-        child: Icon(Icons.add, color: Colors.white),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () {
+      //     // TODO: Ajouter la logique pour créer un nouveau rendez-vous
+      //   },
+      //   backgroundColor: Color(0xFF152895),
+      //   child: Icon(Icons.add, color: Colors.white),
+      // ),
     );
   }
 
-  Color _getStatusColor(String? statut) {
-    switch (statut) {
-      case 'planifie':
-        return Color(0xFF152895);
-      case 'confirme':
-        return Color(0xFF152895);
-      case 'termine':
-        return Color(0xFF9C27B0);
-      case 'annule':
-        return Color(0xFFF44336);
-      default:
-        return Color(0xFF152895);
-    }
-  }
-
   Widget _buildRendezVousCard(Map<String, dynamic> rdv) {
-    final color = _getStatusColor(rdv['statut']);
     final client = rdv['client'] ?? {};
     final clientName = '${client['nom'] ?? ''} ${client['prenom'] ?? ''}'
         .trim();
@@ -222,14 +212,14 @@ class _RendezVousState extends State<RendezVous> {
       margin: EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2), width: 1),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 5,
-            offset: Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -241,10 +231,10 @@ class _RendezVousState extends State<RendezVous> {
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: Color(0xFF152895).withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.event, color: color, size: 22),
+                child: Icon(Icons.event, color: Color(0xFF152895), size: 22),
               ),
               SizedBox(width: 12),
               Expanded(
@@ -264,7 +254,7 @@ class _RendezVousState extends State<RendezVous> {
                       clientName.isNotEmpty
                           ? clientName
                           : 'Client non spécifié',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF152895)),
+                      style: TextStyle(fontSize: 12, color: Color(0xFF152895).withValues(alpha: 0.7)),
                     ),
                   ],
                 ),
@@ -272,14 +262,14 @@ class _RendezVousState extends State<RendezVous> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: Color(0xFF152895).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   _getStatusText(rdv['statut']),
                   style: TextStyle(
                     fontSize: 12,
-                    color: color,
+                    color: Color(0xFF152895),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -325,12 +315,12 @@ class _RendezVousState extends State<RendezVous> {
                 Icon(
                   Icons.notifications_active,
                   size: 16,
-                  color: Colors.orange,
+                  color: Color(0xFF152895),
                 ),
                 SizedBox(width: 4),
                 Text(
                   'Rappel activé: $rappelMinutes min avant',
-                  style: TextStyle(fontSize: 12, color: Colors.orange[700]),
+                  style: TextStyle(fontSize: 12, color: Color(0xFF152895)),
                 ),
               ],
             ),

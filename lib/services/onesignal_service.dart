@@ -1,4 +1,5 @@
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'tts_service.dart';
 
 class OneSignalService {
   static OneSignalService? _instance;
@@ -22,12 +23,28 @@ class OneSignalService {
 
       OneSignal.Notifications.addClickListener((event) {
         print('OneSignal: Notification clicked - ${event.notification.title}');
+
+        // Lire la notification à haute voix quand l'utilisateur clique
+        final title = event.notification.title ?? '';
+        final body = event.notification.body ?? '';
+        final message = '$title. $body';
+
+        print('OneSignal: Attempting to speak notification on click');
+        TTSService.instance.speak(message);
       });
 
       OneSignal.Notifications.addForegroundWillDisplayListener((event) {
         print(
           'OneSignal: Notification received in foreground - ${event.notification.title}',
         );
+
+        // Lire la notification à haute voix quand l'app est ouverte
+        final title = event.notification.title ?? '';
+        final body = event.notification.body ?? '';
+        final message = '$title. $body';
+
+        print('OneSignal: Attempting to speak notification in foreground');
+        TTSService.instance.speak(message);
       });
 
       print('OneSignal: Initialization completed');
@@ -46,5 +63,16 @@ class OneSignalService {
     print('OneSignal: Logging out user');
     OneSignal.logout();
     print('OneSignal: User logged out successfully');
+  }
+
+  Future<String?> getOnesignalId() async {
+    try {
+      final onesignalId = await OneSignal.User.getOnesignalId();
+      print('OneSignal: getOnesignalId = $onesignalId');
+      return onesignalId;
+    } catch (e) {
+      print('OneSignal: Error getting onesignal_id - $e');
+      return null;
+    }
   }
 }

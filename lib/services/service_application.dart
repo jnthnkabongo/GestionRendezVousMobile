@@ -1,24 +1,23 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
+//import 'dart:io';
+//import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // static String baseUrl =
-  //'https://kinstore.alwaysdata.net/api';
+  static String baseUrl = 'https://my2kmining.alwaysdata.net/api';
 
-  static String get baseUrl {
-    if (kIsWeb) {
-      // return 'http://localhost:8000/api';
-      return 'http://192.168.13.126:8000/api';
-    } else if (Platform.isAndroid) {
-      return 'http://192.168.13.126:8000/api';
-    } else if (Platform.isIOS) {
-      return 'http://192.168.13.126:8000/api';
-    }
-    return 'http://192.168.13.126:8000/api';
-  }
+  // Pour développement local, décommentez et ajustez ces lignes
+  // static String get baseUrl {
+  //   if (kIsWeb) {
+  //     return 'http://192.168.248.126:8000/api';
+  //   } else if (Platform.isAndroid) {
+  //     return 'http://192.168.248.126:8000/api';
+  //   } else if (Platform.isIOS) {
+  //     return 'http://192.168.248.126:8000/api';
+  //   }
+  //   return 'http://192.168.248.126:8000/api';
+  // }
 
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'user';
@@ -162,5 +161,27 @@ class ApiService {
         'Erreur lors de la récupération des rendez-vous terminés',
       );
     }
+  }
+
+  static Future<dynamic> updateOnesignalId(String onesignalId) async {
+    final headers = await getAuthHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/update-onesignal-id'),
+      headers: headers,
+      body: jsonEncode({'onesignal_id': onesignalId}),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      throw Exception('Erreur lors de la mise à jour de l\'OneSignal ID');
+    }
+  }
+
+  //Déconnexion de l'utilisateur
+  static Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
+    await prefs.remove(_userKey);
   }
 }

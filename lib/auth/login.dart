@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:frontend/pages/main_menu.dart';
 import 'package:frontend/services/service_application.dart';
+import 'package:frontend/services/onesignal_service.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -48,6 +49,17 @@ class _LoginState extends State<Login> {
           );
 
           print(response['message']);
+
+          // Envoyer l'OneSignal ID au backend
+          final onesignalId = await OneSignalService.instance.getOnesignalId();
+          if (onesignalId != null) {
+            try {
+              await ApiService.updateOnesignalId(onesignalId);
+              print('OneSignal ID envoyé au backend: $onesignalId');
+            } catch (e) {
+              print('Erreur lors de l\'envoi de l\'OneSignal ID: $e');
+            }
+          }
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -106,12 +118,17 @@ class _LoginState extends State<Login> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(10),
                     child: Image.asset(
                       'assets/images/logo_web_512x192.png',
                       width: 250,
                       height: 250,
                     ),
+                  ),
+                  Text(
+                    'PCA KALI TSHISEKEDI',
+                    style: TextStyle(fontSize: 25, color: Color(0xFFB8860B)),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(

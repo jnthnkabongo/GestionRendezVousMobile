@@ -33,7 +33,7 @@ class _HomeWithBottomNavState extends State<HomeWithBottomNav> {
         _dashboardData = data;
         _isLoading = false;
         _pages = [
-          Dashboard(dashboardData: _dashboardData!),
+          Dashboard(dashboardData: _dashboardData!, onRefresh: _loadDashboardData),
           const Planning(),
           const RendezVous(),
           const Visites(),
@@ -45,7 +45,7 @@ class _HomeWithBottomNavState extends State<HomeWithBottomNav> {
       setState(() {
         _isLoading = false;
         _pages = [
-          Dashboard(dashboardData: {}),
+          Dashboard(dashboardData: {}, onRefresh: _loadDashboardData),
           const Planning(),
           const RendezVous(),
           const Visites(),

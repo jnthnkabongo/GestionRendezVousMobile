@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/auth/login.dart';
 import 'services/onesignal_service.dart';
+import 'services/tts_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize OneSignal
   await OneSignalService.instance.init();
+
+  // Initialize TTS
+  await TTSService.instance.init();
 
   runApp(const MyApp());
 }
