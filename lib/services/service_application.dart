@@ -1,6 +1,6 @@
 import 'dart:convert';
-//import 'dart:io';
-//import 'package:flutter/foundation.dart';
+// import 'dart:io';
+// import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -10,13 +10,13 @@ class ApiService {
   // Pour développement local, décommentez et ajustez ces lignes
   // static String get baseUrl {
   //   if (kIsWeb) {
-  //     return 'http://192.168.248.126:8000/api';
+  //     return 'http://192.168.187.126:8000/api';
   //   } else if (Platform.isAndroid) {
-  //     return 'http://192.168.248.126:8000/api';
+  //     return 'http://192.168.187.126:8000/api';
   //   } else if (Platform.isIOS) {
-  //     return 'http://192.168.248.126:8000/api';
+  //     return 'http://192.168.187.126:8000/api';
   //   }
-  //   return 'http://192.168.248.126:8000/api';
+  //   return 'http://192.168.187.126:8000/api';
   // }
 
   static const String _tokenKey = 'auth_token';
@@ -144,6 +144,40 @@ class ApiService {
       throw Exception(
         'Erreur lors de la récupération des rendez-vous terminés',
       );
+    }
+  }
+
+  static Future<dynamic> createRendezVous(
+    Map<String, dynamic> rendezVousData,
+  ) async {
+    final headers = await getAuthHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/rendez-vous'),
+      headers: headers,
+      body: jsonEncode(rendezVousData),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      final data = jsonDecode(response.body);
+      throw Exception(
+        data['message'] ?? 'Erreur lors de la création du rendez-vous',
+      );
+    }
+  }
+
+  static Future<dynamic> getListeInvites() async {
+    final headers = await getAuthHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/invites'),
+      headers: headers,
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      throw Exception('Erreur lors de la récupération des invités');
     }
   }
 
