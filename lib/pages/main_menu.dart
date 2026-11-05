@@ -33,7 +33,10 @@ class _HomeWithBottomNavState extends State<HomeWithBottomNav> {
         _dashboardData = data;
         _isLoading = false;
         _pages = [
-          Dashboard(dashboardData: _dashboardData!, onRefresh: _loadDashboardData),
+          Dashboard(
+            dashboardData: _dashboardData!,
+            onRefresh: _loadDashboardData,
+          ),
           const Planning(),
           const RendezVous(),
           const Visites(),
@@ -105,7 +108,7 @@ class _HomeWithBottomNavState extends State<HomeWithBottomNav> {
                 _buildNavItem(
                   icon: Icons.person_pin_outlined,
                   selectedIcon: Icons.person_pin,
-                  label: 'Visites',
+                  label: 'Invités',
                   index: 3,
                 ),
                 _buildNavItem(

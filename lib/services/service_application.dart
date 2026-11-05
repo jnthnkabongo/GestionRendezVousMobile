@@ -10,13 +10,13 @@ class ApiService {
   // Pour développement local, décommentez et ajustez ces lignes
   // static String get baseUrl {
   //   if (kIsWeb) {
-  //     return 'http://192.168.187.126:8000/api';
+  //     return 'http://10.235.140.126:8000/api';
   //   } else if (Platform.isAndroid) {
-  //     return 'http://192.168.187.126:8000/api';
+  //     return 'http://10.235.140.126:8000/api';
   //   } else if (Platform.isIOS) {
-  //     return 'http://192.168.187.126:8000/api';
+  //     return 'http://10.235.140.126:8000/api';
   //   }
-  //   return 'http://192.168.187.126:8000/api';
+  //   return 'http://10.235.140.126:8000/api';
   // }
 
   static const String _tokenKey = 'auth_token';
@@ -161,16 +161,25 @@ class ApiService {
       return data;
     } else {
       final data = jsonDecode(response.body);
-      throw Exception(
-        data['message'] ?? 'Erreur lors de la création du rendez-vous',
-      );
+      String message =
+          data['message'] ?? 'Erreur lors de la création du rendez-vous';
+      if (data['errors'] != null) {
+        final errors = data['errors'] as Map<String, dynamic>;
+        final firstError = errors.values
+            .expand((e) => e is List ? e : [e])
+            .firstOrNull;
+        if (firstError != null) {
+          message = '$message ($firstError)';
+        }
+      }
+      throw Exception(message);
     }
   }
 
   static Future<dynamic> getListeInvites() async {
     final headers = await getAuthHeaders();
     final response = await http.get(
-      Uri.parse('$baseUrl/invites'),
+      Uri.parse('$baseUrl/clients'),
       headers: headers,
     );
     if (response.statusCode == 200) {
@@ -179,6 +188,115 @@ class ApiService {
     } else {
       throw Exception('Erreur lors de la récupération des invités');
     }
+  }
+
+  static Future<dynamic> createInvite(Map<String, dynamic> clientData) async {
+    final headers = await getAuthHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/clients'),
+      headers: headers,
+      body: jsonEncode(clientData),
+    );
+    return _handleClientResponse(response, 'création');
+  }
+
+  static Future<dynamic> updateInvite(
+    String id,
+    Map<String, dynamic> clientData,
+  ) async {
+    final headers = await getAuthHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/clients/$id'),
+      headers: headers,
+      body: jsonEncode(clientData),
+    );
+    return _handleClientResponse(response, 'modification');
+  }
+
+  static Future<dynamic> deleteInvite(String id) async {
+    final headers = await getAuthHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/clients/$id'),
+      headers: headers,
+    );
+    return _handleClientResponse(response, 'suppression');
+  }
+
+  static dynamic _handleClientResponse(http.Response response, String action) {
+    final data = jsonDecode(response.body);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return data;
+    }
+    String message =
+        data['message'] ?? 'Erreur lors de la $action de l\'invité';
+    if (data['errors'] != null) {
+      final errors = data['errors'] as Map<String, dynamic>;
+      final firstError = errors.values
+          .expand((e) => e is List ? e : [e])
+          .firstOrNull;
+      if (firstError != null) {
+        message = '$message ($firstError)';
+      }
+    }
+    throw Exception(message);
+  }
+
+  static Future<dynamic> getUtilisateurs() async {
+    final headers = await getAuthHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/utilisateurs'),
+      headers: headers,
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Erreur lors de la récupération des utilisateurs');
+  }
+
+  static Future<dynamic> getRoles() async {
+    final headers = await getAuthHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/utilisateurs/roles'),
+      headers: headers,
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Erreur lors de la récupération des rôles');
+  }
+
+  static Future<dynamic> createUtilisateur(
+    Map<String, dynamic> userData,
+  ) async {
+    final headers = await getAuthHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/utilisateurs'),
+      headers: headers,
+      body: jsonEncode(userData),
+    );
+    return _handleClientResponse(response, 'création');
+  }
+
+  static Future<dynamic> updateUtilisateur(
+    String id,
+    Map<String, dynamic> userData,
+  ) async {
+    final headers = await getAuthHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/utilisateurs/$id'),
+      headers: headers,
+      body: jsonEncode(userData),
+    );
+    return _handleClientResponse(response, 'modification');
+  }
+
+  static Future<dynamic> deleteUtilisateur(String id) async {
+    final headers = await getAuthHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/utilisateurs/$id'),
+      headers: headers,
+    );
+    return _handleClientResponse(response, 'suppression');
   }
 
   static Future<dynamic> getListeRendezVousTerminer() async {
@@ -193,6 +311,53 @@ class ApiService {
     } else {
       throw Exception(
         'Erreur lors de la récupération des rendez-vous terminés',
+      );
+    }
+  }
+
+  static Future<dynamic> updateRendezVous(
+    String id,
+    Map<String, dynamic> rendezVousData,
+  ) async {
+    final headers = await getAuthHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/rendez-vous/$id'),
+      headers: headers,
+      body: jsonEncode(rendezVousData),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      final data = jsonDecode(response.body);
+      String message =
+          data['message'] ?? 'Erreur lors de la modification du rendez-vous';
+      if (data['errors'] != null) {
+        final errors = data['errors'] as Map<String, dynamic>;
+        final firstError = errors.values
+            .expand((e) => e is List ? e : [e])
+            .firstOrNull;
+        if (firstError != null) {
+          message = '$message ($firstError)';
+        }
+      }
+      throw Exception(message);
+    }
+  }
+
+  static Future<dynamic> deleteRendezVous(String id) async {
+    final headers = await getAuthHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/rendez-vous/$id'),
+      headers: headers,
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      final data = jsonDecode(response.body);
+      throw Exception(
+        data['message'] ?? 'Erreur lors de la suppression du rendez-vous',
       );
     }
   }

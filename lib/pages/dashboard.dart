@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/service_application.dart';
 
 class Dashboard extends StatefulWidget {
   final Map<String, dynamic> dashboardData;
@@ -11,6 +12,453 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
+  // Form key for validation
+  final _formKey = GlobalKey<FormState>();
+
+  // Text controllers
+  final _objetController = TextEditingController();
+  final _dateController = TextEditingController();
+  final _heureDebutController = TextEditingController();
+  final _heureFinController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _rappelMinutesController = TextEditingController(text: '30');
+
+  // Dropdown values
+  String? _selectedClientId;
+  String? _selectedStatut = 'planifie';
+  String? _selectedType = 'interieur';
+
+  // Clients list
+  List<dynamic> _clients = [];
+  bool _isLoadingClients = false;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchClients();
+  }
+
+  @override
+  void dispose() {
+    _objetController.dispose();
+    _dateController.dispose();
+    _heureDebutController.dispose();
+    _heureFinController.dispose();
+    _descriptionController.dispose();
+    _rappelMinutesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchClients() async {
+    try {
+      final response = await ApiService.getListeInvites();
+      if (response['success'] == true && response['data'] != null) {
+        setState(() {
+          _clients = response['data'];
+        });
+      }
+    } catch (e) {
+      print('Error fetching clients: $e');
+    }
+  }
+
+  void _resetForm() {
+    _objetController.clear();
+    _dateController.clear();
+    _heureDebutController.clear();
+    _heureFinController.clear();
+    _descriptionController.clear();
+    _rappelMinutesController.text = '30';
+    setState(() {
+      _selectedClientId = null;
+      _selectedStatut = 'planifie';
+      _selectedType = 'interieur';
+    });
+    _formKey.currentState?.reset();
+  }
+
+  Future<void> _createRendezVous() async {
+    if (_isSubmitting) return;
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSubmitting = true);
+
+    final rendezVousData = {
+      'objet': _objetController.text,
+      'date_rendez_vous': _dateController.text,
+      'heure_debut': _heureDebutController.text,
+      'heure_fin': _heureFinController.text,
+      'client_id': _selectedClientId,
+      'statut': _selectedStatut,
+      'type_rendez_vous': _selectedType,
+      'description': _descriptionController.text,
+      'rappel_active': true,
+      'rappel_minutes': int.tryParse(_rappelMinutesController.text) ?? 30,
+    };
+
+    try {
+      await ApiService.createRendezVous(rendezVousData);
+      _resetForm();
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Rendez-vous créé avec succès'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Refresh the dashboard
+        if (widget.onRefresh != null) {
+          widget.onRefresh!();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() {
+        _dateController.text =
+            '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+      });
+    }
+  }
+
+  Future<void> _selectTime(String controllerType) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        if (controllerType == 'debut') {
+          _heureDebutController.text =
+              '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}:00';
+        } else {
+          _heureFinController.text =
+              '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}:00';
+        }
+      });
+    }
+  }
+
+  void _showCreateRendezVousModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.8,
+        minChildSize: 0.5,
+        maxChildSize: 0.85,
+        builder: (context, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Color(0xFF152895),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Nouveau Rendez-vous',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              // Form
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    padding: EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Objet
+                        TextFormField(
+                          controller: _objetController,
+                          decoration: InputDecoration(
+                            labelText: 'Objet',
+                            hintText: 'Ex: Réunion importante',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.event),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Veuillez entrer l\'objet';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 10),
+
+                        // Date
+                        TextFormField(
+                          controller: _dateController,
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: 'Date',
+                            hintText: 'Sélectionner la date',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.calendar_today),
+                            suffixIcon: Icon(Icons.calendar_month),
+                          ),
+                          onTap: _selectDate,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Veuillez sélectionner la date';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 10),
+
+                        // Heures
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _heureDebutController,
+                                readOnly: true,
+                                decoration: InputDecoration(
+                                  labelText: 'Heure début',
+                                  hintText: '08:00',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.access_time),
+                                ),
+                                onTap: () => _selectTime('debut'),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Requis';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _heureFinController,
+                                readOnly: true,
+                                decoration: InputDecoration(
+                                  labelText: 'Heure fin',
+                                  hintText: '09:00',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.access_time),
+                                ),
+                                onTap: () => _selectTime('fin'),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Requis';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+
+                        // Client
+                        DropdownButtonFormField<String>(
+                          value: _selectedClientId,
+                          decoration: InputDecoration(
+                            labelText: 'Invité',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.person),
+                          ),
+                          items: _clients.map((client) {
+                            return DropdownMenuItem<String>(
+                              value: client['id'].toString(),
+                              child: Text(
+                                '${client['nom']} ${client['prenom']}',
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() => _selectedClientId = value);
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Veuillez sélectionner un invité';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 10),
+
+                        // Statut
+                        DropdownButtonFormField<String>(
+                          value: _selectedStatut,
+                          decoration: InputDecoration(
+                            labelText: 'Statut',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.info),
+                          ),
+                          items: [
+                            DropdownMenuItem(
+                              value: 'planifie',
+                              child: Text('Planifié'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'confirme',
+                              child: Text('Confirmé'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'termine',
+                              child: Text('Terminé'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'annule',
+                              child: Text('Annulé'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() => _selectedStatut = value);
+                          },
+                        ),
+                        SizedBox(height: 10),
+
+                        // Type
+                        DropdownButtonFormField<String>(
+                          value: _selectedType,
+                          decoration: InputDecoration(
+                            labelText: 'Type',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.location_on),
+                          ),
+                          items: [
+                            DropdownMenuItem(
+                              value: 'interieur',
+                              child: Text('Intérieur'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'exterieur',
+                              child: Text('Extérieur'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() => _selectedType = value);
+                          },
+                        ),
+                        SizedBox(height: 10),
+
+                        // Description
+                        TextFormField(
+                          controller: _descriptionController,
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            labelText: 'Description (optionnel)',
+                            hintText: 'Description du rendez-vous...',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.description),
+                          ),
+                        ),
+                        SizedBox(height: 10),
+
+                        TextFormField(
+                          controller: _rappelMinutesController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Minutes avant le rappel',
+                            hintText: '30',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.timer),
+                            helperText:
+                                'Notification envoyée avant le rendez-vous',
+                          ),
+                          validator: (value) {
+                            final minutes = int.tryParse(value ?? '');
+                            if (minutes == null || minutes < 1) {
+                              return 'Entrez un nombre de minutes valide';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 20),
+
+                        // Submit button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isSubmitting ? null : _createRendezVous,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFF152895),
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: _isSubmitting
+                                ? SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(
+                                    'Créer le Rendez-vous',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = widget.dashboardData;
@@ -25,6 +473,11 @@ class _DashboardState extends State<Dashboard> {
         (data['rendez_vous_recents'] as List<dynamic>?) ?? [];
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showCreateRendezVousModal,
+        backgroundColor: Color(0xFF152895),
+        child: Icon(Icons.add, color: Colors.white),
+      ),
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(

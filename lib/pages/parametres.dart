@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/tts_service.dart';
 import '../services/service_application.dart';
 import '../auth/login.dart';
+import 'utilisateurs.dart';
 
 class Parametres extends StatefulWidget {
   const Parametres({super.key});
@@ -27,10 +28,18 @@ class _ParametresState extends State<Parametres> {
   Future<void> _loadUserData() async {
     final user = await ApiService.recupererDonneesUser('user');
     if (user != null) {
+      final nom = user['nom'] ?? '';
+      final prenom = user['prenom'] ?? '';
+      final fullName = '$nom $prenom'.trim();
       setState(() {
-        _userName = '${user['nom'] ?? ''} ${user['prenom'] ?? ''}'.trim();
+        _userName = fullName.isNotEmpty
+            ? fullName
+            : (user['name'] ?? 'Utilisateur').toString();
         _userEmail = user['email'] ?? 'email@example.com';
-        _userRole = user['role'] ?? 'Utilisateur';
+        final role = user['role'];
+        _userRole = role is Map
+            ? (role['name'] ?? role['nom'] ?? 'Utilisateur').toString()
+            : (user['role'] ?? 'Utilisateur').toString();
       });
     }
   }
@@ -75,10 +84,7 @@ class _ParametresState extends State<Parametres> {
                 );
               }
             },
-            child: Text(
-              'Déconnexion',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: Text('Déconnexion', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -131,7 +137,10 @@ class _ParametresState extends State<Parametres> {
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  width: 1,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.1),
@@ -140,68 +149,68 @@ class _ParametresState extends State<Parametres> {
                   ),
                 ],
               ),
-            child: Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: CircleAvatar(
+                      radius: 40,
+                      backgroundColor: Colors.white.withValues(alpha: 0.3),
+                      child: Icon(Icons.person, size: 48, color: Colors.white),
+                    ),
                   ),
-                  child: CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Colors.white.withValues(alpha: 0.3),
-                    child: Icon(Icons.person, size: 48, color: Colors.white),
-                  ),
-                ),
-                SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _userName.isNotEmpty ? _userName : 'Utilisateur',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        _userEmail,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 14,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          _capitalize(_userRole),
+                  SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _userName.isNotEmpty ? _userName : 'Utilisateur',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                    ],
+                        SizedBox(height: 4),
+                        Text(
+                          _userEmail,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 14,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            _capitalize(_userRole),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Icon(Icons.edit, color: Colors.white, size: 24),
-              ],
+                  Icon(Icons.edit, color: Colors.white, size: 24),
+                ],
+              ),
             ),
-          ),
-          SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // Section Profil
             Text(
@@ -220,10 +229,15 @@ class _ParametresState extends State<Parametres> {
               () {},
             ),
             _buildSettingsCard(
-              Icons.security,
-              'Sécurité',
-              'Mot de passe et authentification',
-              () {},
+              Icons.manage_accounts,
+              'Gestion des utilisateurs',
+              'Gérez les comptes utilisateurs',
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Utilisateurs()),
+                );
+              },
             ),
             SizedBox(height: 24),
 
@@ -338,7 +352,10 @@ class _ParametresState extends State<Parametres> {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
@@ -372,7 +389,10 @@ class _ParametresState extends State<Parametres> {
         ),
         subtitle: Text(
           subtitle,
-          style: TextStyle(fontSize: 14, color: Color(0xFF152895).withValues(alpha: 0.7)),
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFF152895).withValues(alpha: 0.7),
+          ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
@@ -396,7 +416,10 @@ class _ParametresState extends State<Parametres> {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
@@ -424,7 +447,10 @@ class _ParametresState extends State<Parametres> {
         ),
         subtitle: Text(
           subtitle,
-          style: TextStyle(fontSize: 14, color: Color(0xFF152895).withValues(alpha: 0.7)),
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFF152895).withValues(alpha: 0.7),
+          ),
         ),
         trailing: Switch(
           value: value,
